@@ -65,6 +65,7 @@ TYPES: BEGIN OF ty_api_response,
          http_status TYPE i,
          body        TYPE string,
          ack_number  TYPE zack_number,
+         guid        TYPE guid_32,
        END OF ty_api_response.
 
 TYPES: BEGIN OF ty_customer,

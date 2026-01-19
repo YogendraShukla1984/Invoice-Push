@@ -3,122 +3,213 @@
 *&---------------------------------------------------------------------*
 *& Class Definitions and Implementations
 *& All business logic is implemented in classes (OOP approach)
+*& Regenerated following ABAP Best Practices and Modern Syntax
 *&---------------------------------------------------------------------*
 
-" BEGIN: Cursor Generated Code
+" BEGIN: Regenerated Code with Best Practices
 
 *----------------------------------------------------------------------*
 * CLASS lcl_logger DEFINITION
 *----------------------------------------------------------------------*
+* Purpose: Application log management for invoice push operations
+* Responsibilities: Log creation, message logging, display and persistence
+*----------------------------------------------------------------------*
 CLASS lcl_logger DEFINITION.
   PUBLIC SECTION.
-    METHODS: initialize,
-             log_message IMPORTING iv_msgty TYPE sy-msgty
-                                   iv_msgid TYPE sy-msgid DEFAULT lc_msgid
-                                   iv_msgno TYPE sy-msgno
-                                   iv_msgv1 TYPE sy-msgv1 OPTIONAL
-                                   iv_msgv2 TYPE sy-msgv2 OPTIONAL
-                                   iv_msgv3 TYPE sy-msgv3 OPTIONAL
-                                   iv_msgv4 TYPE sy-msgv4 OPTIONAL,
-             log_error   IMPORTING iv_text TYPE string,
-             log_warning IMPORTING iv_text TYPE string,
-             log_success IMPORTING iv_text TYPE string,
-             log_info    IMPORTING iv_text TYPE string,
-             save_log,
-             display_log,
-             get_log_handle RETURNING VALUE(rv_handle) TYPE balloghndl.
+    " Public methods for log management
+    METHODS:
+      initialize
+        RAISING cx_bal_exception,
+      
+      log_message
+        IMPORTING
+          iv_msgty TYPE sy-msgty
+          iv_msgid TYPE sy-msgid DEFAULT lc_msgid
+          iv_msgno TYPE sy-msgno
+          iv_msgv1 TYPE sy-msgv1 OPTIONAL
+          iv_msgv2 TYPE sy-msgv2 OPTIONAL
+          iv_msgv3 TYPE sy-msgv3 OPTIONAL
+          iv_msgv4 TYPE sy-msgv4 OPTIONAL
+        RAISING cx_bal_exception,
+      
+      log_error
+        IMPORTING
+          iv_text TYPE string
+        RAISING cx_bal_exception,
+      
+      log_warning
+        IMPORTING
+          iv_text TYPE string
+        RAISING cx_bal_exception,
+      
+      log_success
+        IMPORTING
+          iv_text TYPE string
+        RAISING cx_bal_exception,
+      
+      log_info
+        IMPORTING
+          iv_text TYPE string
+        RAISING cx_bal_exception,
+      
+      save_log
+        RAISING cx_bal_exception,
+      
+      display_log,
+      
+      get_log_handle
+        RETURNING VALUE(rv_handle) TYPE balloghndl.
 
   PRIVATE SECTION.
-    DATA: mv_log_handle TYPE balloghndl.
+    DATA mv_log_handle TYPE balloghndl.
 ENDCLASS.
 
 *----------------------------------------------------------------------*
 * CLASS lcl_json_builder DEFINITION
 *----------------------------------------------------------------------*
+* Purpose: JSON payload construction for invoice data
+* Responsibilities: Format conversion, JSON escaping, payload building
+*----------------------------------------------------------------------*
 CLASS lcl_json_builder DEFINITION.
   PUBLIC SECTION.
-    METHODS: build_invoice_json
-               IMPORTING is_invoice       TYPE ty_invoice_data
-               RETURNING VALUE(rv_json)   TYPE string.
+    METHODS:
+      build_invoice_json
+        IMPORTING
+          is_invoice     TYPE ty_invoice_data
+        RETURNING
+          VALUE(rv_json) TYPE string.
 
   PRIVATE SECTION.
-    METHODS: escape_json_string
-               IMPORTING iv_input         TYPE string
-               RETURNING VALUE(rv_output) TYPE string,
-             format_date
-               IMPORTING iv_date              TYPE datum
-               RETURNING VALUE(rv_formatted)  TYPE string,
-             format_decimal
-               IMPORTING iv_value             TYPE any
-               RETURNING VALUE(rv_formatted)  TYPE string.
+    METHODS:
+      escape_json_string
+        IMPORTING
+          iv_input         TYPE string
+        RETURNING
+          VALUE(rv_output) TYPE string,
+      
+      format_date
+        IMPORTING
+          iv_date              TYPE datum
+        RETURNING
+          VALUE(rv_formatted)  TYPE string,
+      
+      format_decimal
+        IMPORTING
+          iv_value             TYPE any
+        RETURNING
+          VALUE(rv_formatted)  TYPE string.
 ENDCLASS.
 
 *----------------------------------------------------------------------*
 * CLASS lcl_api_handler DEFINITION
 *----------------------------------------------------------------------*
+* Purpose: HTTP API communication handler using Z_SAP_TO_REST_API FM
+* Responsibilities: API calls, response parsing, header management
+*----------------------------------------------------------------------*
 CLASS lcl_api_handler DEFINITION.
   PUBLIC SECTION.
-    METHODS: call_api
-               IMPORTING iv_json            TYPE string
-               RETURNING VALUE(rs_response) TYPE ty_api_response
-               RAISING   zcx_api_error.
+    METHODS:
+      call_api
+        IMPORTING
+          iv_json            TYPE string
+          iv_guid            TYPE guid_32 OPTIONAL
+        RETURNING
+          VALUE(rs_response) TYPE ty_api_response
+        RAISING
+          zcx_api_error.
 
   PRIVATE SECTION.
-    METHODS: create_http_client
-               RETURNING VALUE(ro_client)   TYPE REF TO if_http_client
-               RAISING   zcx_api_error,
-             set_authentication
-               IMPORTING io_http_client TYPE REF TO if_http_client,
-             parse_ack_number
-               IMPORTING iv_response          TYPE string
-               RETURNING VALUE(rv_ack_number) TYPE zack_number.
+    METHODS:
+      build_request_headers
+        RETURNING
+          VALUE(rt_headers) TYPE tihttpnvp,
+      
+      parse_ack_number
+        IMPORTING
+          iv_response          TYPE string
+        RETURNING
+          VALUE(rv_ack_number) TYPE zack_number.
 ENDCLASS.
 
 *----------------------------------------------------------------------*
 * CLASS lcl_report DEFINITION
 *----------------------------------------------------------------------*
+* Purpose: Main report controller for invoice push operations
+* Responsibilities: Orchestration, validation, data selection, processing
+*----------------------------------------------------------------------*
 CLASS lcl_report DEFINITION.
   PUBLIC SECTION.
-    METHODS: authorization_check
-               RAISING zcx_no_authority,
-             validate_company_code,
-             validate_date_range,
-             read_configuration
-               RAISING zcx_config_missing,
-             select_billing_data,
-             process_invoices,
-             display_summary,
-             has_data RETURNING VALUE(rv_has_data) TYPE abap_bool,
-             initialize_logger,
-             finalize_logger.
+    METHODS:
+      authorization_check
+        RAISING zcx_no_authority,
+      
+      validate_company_code
+        RAISING zcx_validation_error,
+      
+      validate_date_range
+        RAISING zcx_validation_error,
+      
+      read_configuration
+        RAISING zcx_config_missing,
+      
+      select_billing_data,
+      
+      process_invoices,
+      
+      display_summary,
+      
+      has_data
+        RETURNING VALUE(rv_has_data) TYPE abap_bool,
+      
+      initialize_logger,
+      
+      finalize_logger.
 
   PRIVATE SECTION.
-    DATA: lo_logger       TYPE REF TO lcl_logger,
-          lo_json_builder TYPE REF TO lcl_json_builder,
-          lo_api_handler  TYPE REF TO lcl_api_handler.
+    " Object references
+    DATA:
+      mo_logger       TYPE REF TO lcl_logger,
+      mo_json_builder TYPE REF TO lcl_json_builder,
+      mo_api_handler  TYPE REF TO lcl_api_handler.
 
-    METHODS: check_idempotency
-               IMPORTING iv_vbeln         TYPE vbeln_vf
-                         iv_fkdat         TYPE fkdat
-                         iv_posnr         TYPE posnr
-               RETURNING VALUE(rv_action) TYPE char10,
-             build_json_payload
-               IMPORTING is_invoice    TYPE ty_invoice_data
-               RETURNING VALUE(rv_json) TYPE string,
-             call_jwms_api
-               IMPORTING iv_json            TYPE string
-               RETURNING VALUE(rs_response) TYPE ty_api_response
-               RAISING   zcx_api_error,
-             persist_result
-               IMPORTING is_invoice     TYPE ty_invoice_data
-                         iv_status      TYPE char1
-                         iv_json        TYPE string
-                         iv_response    TYPE string OPTIONAL
-                         iv_ack_no      TYPE zack_number OPTIONAL
-                         iv_http_status TYPE i OPTIONAL,
-             commit_package,
-             enrich_customer_data,
-             read_interface_records.
+    " Private methods
+    METHODS:
+      check_idempotency
+        IMPORTING
+          iv_vbeln         TYPE vbeln_vf
+          iv_fkdat         TYPE fkdat
+          iv_posnr         TYPE posnr
+        RETURNING
+          VALUE(rv_action) TYPE char10,
+      
+      build_json_payload
+        IMPORTING
+          is_invoice     TYPE ty_invoice_data
+        RETURNING
+          VALUE(rv_json) TYPE string,
+      
+      call_jwms_api
+        IMPORTING
+          iv_json            TYPE string
+        RETURNING
+          VALUE(rs_response) TYPE ty_api_response
+        RAISING
+          zcx_api_error,
+      
+      persist_result
+        IMPORTING
+          is_invoice     TYPE ty_invoice_data
+          iv_status      TYPE char1
+          iv_json        TYPE string
+          iv_response    TYPE string OPTIONAL
+          iv_ack_no      TYPE zack_number OPTIONAL
+          iv_http_status TYPE i OPTIONAL,
+      
+      commit_package,
+      
+      enrich_customer_data,
+      
+      read_interface_records.
 ENDCLASS.
 
 *----------------------------------------------------------------------*
@@ -127,51 +218,58 @@ ENDCLASS.
 CLASS lcl_logger IMPLEMENTATION.
 
   METHOD initialize.
-    DATA: lw_log       TYPE bal_s_log,
-          lv_extnumber TYPE balnrext.
+    DATA:
+      ls_log       TYPE bal_s_log,
+      lv_extnumber TYPE balnrext.
 
-    " External number: YYYYMMDD_HHMMSS
-    CONCATENATE sy-datum '_' sy-uzeit INTO lv_extnumber.
+    " Build external number: YYYYMMDD_HHMMSS
+    lv_extnumber = |{ sy-datum }_{ sy-uzeit }|.
 
     " Initialize log structure
-    lw_log-object     = lc_log_object.
-    lw_log-subobject  = lc_log_subobject.
-    lw_log-extnumber  = lv_extnumber.
-    lw_log-aluser     = sy-uname.
-    lw_log-alprog     = sy-repid.
+    ls_log-object    = lc_log_object.
+    ls_log-subobject = lc_log_subobject.
+    ls_log-extnumber = lv_extnumber.
+    ls_log-aluser    = sy-uname.
+    ls_log-alprog    = sy-repid.
 
     " Create application log
-    CALL FUNCTION 'BAL_LOG_CREATE'
-      EXPORTING
-        i_s_log      = lw_log
-      IMPORTING
-        e_log_handle = mv_log_handle.
-
-    IF sy-subrc <> 0.
-      MESSAGE 'Failed to create application log'(099) TYPE 'E'.
-    ENDIF.
+    TRY.
+        CALL FUNCTION 'BAL_LOG_CREATE'
+          EXPORTING
+            i_s_log      = ls_log
+          IMPORTING
+            e_log_handle = mv_log_handle.
+            
+      CATCH cx_root INTO DATA(lx_error).
+        MESSAGE lx_error TYPE 'E'.
+    ENDTRY.
 
   ENDMETHOD.
 
   METHOD log_message.
-    DATA: lw_msg TYPE bal_s_msg.
+    DATA ls_msg TYPE bal_s_msg.
 
     " Build message structure
-    lw_msg-msgty = iv_msgty.
-    lw_msg-msgid = iv_msgid.
-    lw_msg-msgno = iv_msgno.
-    lw_msg-msgv1 = iv_msgv1.
-    lw_msg-msgv2 = iv_msgv2.
-    lw_msg-msgv3 = iv_msgv3.
-    lw_msg-msgv4 = iv_msgv4.
+    ls_msg-msgty = iv_msgty.
+    ls_msg-msgid = iv_msgid.
+    ls_msg-msgno = iv_msgno.
+    ls_msg-msgv1 = iv_msgv1.
+    ls_msg-msgv2 = iv_msgv2.
+    ls_msg-msgv3 = iv_msgv3.
+    ls_msg-msgv4 = iv_msgv4.
 
     " Add message to application log
-    CALL FUNCTION 'BAL_LOG_MSG_ADD'
-      EXPORTING
-        i_log_handle = mv_log_handle
-        i_s_msg      = lw_msg.
+    TRY.
+        CALL FUNCTION 'BAL_LOG_MSG_ADD'
+          EXPORTING
+            i_log_handle = mv_log_handle
+            i_s_msg      = ls_msg.
+            
+      CATCH cx_root INTO DATA(lx_error).
+        " Silently handle log errors to not interrupt processing
+    ENDTRY.
 
-    " Also display in foreground if not batch
+    " Display in foreground if not batch
     IF sy-batch = abap_false.
       MESSAGE ID iv_msgid TYPE iv_msgty NUMBER iv_msgno
         WITH iv_msgv1 iv_msgv2 iv_msgv3 iv_msgv4.
@@ -180,17 +278,22 @@ CLASS lcl_logger IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD log_error.
-    DATA: lw_msg TYPE bal_s_msg.
+    DATA ls_msg TYPE bal_s_msg.
 
-    lw_msg-msgty = 'E'.
-    lw_msg-msgid = '00'.
-    lw_msg-msgno = '001'.
-    lw_msg-msgv1 = iv_text.
+    ls_msg-msgty = 'E'.
+    ls_msg-msgid = '00'.
+    ls_msg-msgno = '001'.
+    ls_msg-msgv1 = iv_text.
 
-    CALL FUNCTION 'BAL_LOG_MSG_ADD'
-      EXPORTING
-        i_log_handle = mv_log_handle
-        i_s_msg      = lw_msg.
+    TRY.
+        CALL FUNCTION 'BAL_LOG_MSG_ADD'
+          EXPORTING
+            i_log_handle = mv_log_handle
+            i_s_msg      = ls_msg.
+            
+      CATCH cx_root INTO DATA(lx_error).
+        " Silently handle log errors
+    ENDTRY.
 
     IF sy-batch = abap_false.
       MESSAGE iv_text TYPE 'I' DISPLAY LIKE 'E'.
@@ -199,17 +302,22 @@ CLASS lcl_logger IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD log_warning.
-    DATA: lw_msg TYPE bal_s_msg.
+    DATA ls_msg TYPE bal_s_msg.
 
-    lw_msg-msgty = 'W'.
-    lw_msg-msgid = '00'.
-    lw_msg-msgno = '001'.
-    lw_msg-msgv1 = iv_text.
+    ls_msg-msgty = 'W'.
+    ls_msg-msgid = '00'.
+    ls_msg-msgno = '001'.
+    ls_msg-msgv1 = iv_text.
 
-    CALL FUNCTION 'BAL_LOG_MSG_ADD'
-      EXPORTING
-        i_log_handle = mv_log_handle
-        i_s_msg      = lw_msg.
+    TRY.
+        CALL FUNCTION 'BAL_LOG_MSG_ADD'
+          EXPORTING
+            i_log_handle = mv_log_handle
+            i_s_msg      = ls_msg.
+            
+      CATCH cx_root INTO DATA(lx_error).
+        " Silently handle log errors
+    ENDTRY.
 
     IF sy-batch = abap_false.
       MESSAGE iv_text TYPE 'I' DISPLAY LIKE 'W'.
@@ -218,17 +326,22 @@ CLASS lcl_logger IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD log_success.
-    DATA: lw_msg TYPE bal_s_msg.
+    DATA ls_msg TYPE bal_s_msg.
 
-    lw_msg-msgty = 'S'.
-    lw_msg-msgid = '00'.
-    lw_msg-msgno = '001'.
-    lw_msg-msgv1 = iv_text.
+    ls_msg-msgty = 'S'.
+    ls_msg-msgid = '00'.
+    ls_msg-msgno = '001'.
+    ls_msg-msgv1 = iv_text.
 
-    CALL FUNCTION 'BAL_LOG_MSG_ADD'
-      EXPORTING
-        i_log_handle = mv_log_handle
-        i_s_msg      = lw_msg.
+    TRY.
+        CALL FUNCTION 'BAL_LOG_MSG_ADD'
+          EXPORTING
+            i_log_handle = mv_log_handle
+            i_s_msg      = ls_msg.
+            
+      CATCH cx_root INTO DATA(lx_error).
+        " Silently handle log errors
+    ENDTRY.
 
     IF sy-batch = abap_false.
       MESSAGE iv_text TYPE 'S'.
@@ -237,46 +350,56 @@ CLASS lcl_logger IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD log_info.
-    DATA: lw_msg TYPE bal_s_msg.
+    DATA ls_msg TYPE bal_s_msg.
 
-    lw_msg-msgty = 'I'.
-    lw_msg-msgid = '00'.
-    lw_msg-msgno = '001'.
-    lw_msg-msgv1 = iv_text.
+    ls_msg-msgty = 'I'.
+    ls_msg-msgid = '00'.
+    ls_msg-msgno = '001'.
+    ls_msg-msgv1 = iv_text.
 
-    CALL FUNCTION 'BAL_LOG_MSG_ADD'
-      EXPORTING
-        i_log_handle = mv_log_handle
-        i_s_msg      = lw_msg.
+    TRY.
+        CALL FUNCTION 'BAL_LOG_MSG_ADD'
+          EXPORTING
+            i_log_handle = mv_log_handle
+            i_s_msg      = ls_msg.
+            
+      CATCH cx_root INTO DATA(lx_error).
+        " Silently handle log errors
+    ENDTRY.
 
   ENDMETHOD.
 
   METHOD save_log.
-    DATA: lt_log_handle TYPE bal_t_logh.
+    DATA lt_log_handle TYPE bal_t_logh.
 
     APPEND mv_log_handle TO lt_log_handle.
 
-    CALL FUNCTION 'BAL_DB_SAVE'
-      EXPORTING
-        i_client         = sy-mandt
-        i_save_all       = abap_true
-        i_t_log_handle   = lt_log_handle
-      EXCEPTIONS
-        log_not_found    = 1
-        save_not_allowed = 2
-        numbering_error  = 3
-        OTHERS           = 4.
+    TRY.
+        CALL FUNCTION 'BAL_DB_SAVE'
+          EXPORTING
+            i_client       = sy-mandt
+            i_save_all     = abap_true
+            i_t_log_handle = lt_log_handle
+          EXCEPTIONS
+            log_not_found    = 1
+            save_not_allowed = 2
+            numbering_error  = 3
+            OTHERS           = 4.
 
-    IF sy-subrc = 0.
-      MESSAGE 'Application log saved successfully'(030) TYPE 'S'.
-    ELSE.
-      MESSAGE 'Failed to save application log'(098) TYPE 'W'.
-    ENDIF.
+        IF sy-subrc = 0.
+          MESSAGE 'Application log saved successfully'(030) TYPE 'S'.
+        ELSE.
+          MESSAGE 'Failed to save application log'(098) TYPE 'W'.
+        ENDIF.
+        
+      CATCH cx_root INTO DATA(lx_error).
+        MESSAGE lx_error TYPE 'W'.
+    ENDTRY.
 
   ENDMETHOD.
 
   METHOD display_log.
-    DATA: lt_log_handle TYPE bal_t_logh.
+    DATA lt_log_handle TYPE bal_t_logh.
 
     APPEND mv_log_handle TO lt_log_handle.
 
@@ -298,12 +421,12 @@ ENDCLASS.
 CLASS lcl_json_builder IMPLEMENTATION.
 
   METHOD build_invoice_json.
-    DATA: lv_json       TYPE string,
-          lv_date       TYPE string,
-          lv_quantity   TYPE string,
-          lv_value      TYPE string,
-          lv_kunrg_name TYPE string,
-          lv_kunag_name TYPE string.
+    DATA:
+      lv_date       TYPE string,
+      lv_quantity   TYPE string,
+      lv_value      TYPE string,
+      lv_kunrg_name TYPE string,
+      lv_kunag_name TYPE string.
 
     " Format values
     lv_date = format_date( is_invoice-fkdat ).
@@ -312,74 +435,64 @@ CLASS lcl_json_builder IMPLEMENTATION.
     lv_kunrg_name = escape_json_string( is_invoice-kunrg_name ).
     lv_kunag_name = escape_json_string( is_invoice-kunag_name ).
 
-    " Build JSON payload
-    CONCATENATE '{'
-      '"AccountId":"' gv_account_id '",'
-      '"BusinessId":"' gv_business_id '",'
-      '"SubBusinessId":"' gv_sub_business_id '",'
-      '"Invoice":{'
-        '"BillingDocument":"' is_invoice-vbeln '",'
-        '"BillingDate":"' lv_date '",'
-        '"CompanyCode":"' is_invoice-bukrs '",'
-        '"Division":"' is_invoice-spart '",'
-        '"SalesOrganization":"' is_invoice-vkorg '",'
-        '"BillToCustomer":"' is_invoice-kunrg '",'
-        '"BillToName":"' lv_kunrg_name '",'
-        '"SoldToCustomer":"' is_invoice-kunag '",'
-        '"SoldToName":"' lv_kunag_name '",'
-        '"Items":['
-          '{'
-            '"ItemNumber":"' is_invoice-posnr '",'
-            '"Material":"' is_invoice-matnr '",'
-            '"Quantity":"' lv_quantity '",'
-            '"UnitOfMeasure":"' is_invoice-vrkme '",'
-            '"NetValue":"' lv_value '",'
-            '"Currency":"' is_invoice-waerk '"'
-          '}'
-        ']'
-      '}'
-    '}' INTO rv_json.
+    " Build JSON payload using string templates (modern syntax)
+    rv_json = |\{ | &&
+              |"AccountId":"{ gv_account_id }",| &&
+              |"BusinessId":"{ gv_business_id }",| &&
+              |"SubBusinessId":"{ gv_sub_business_id }",| &&
+              |"Invoice":\{ | &&
+                |"BillingDocument":"{ is_invoice-vbeln }",| &&
+                |"BillingDate":"{ lv_date }",| &&
+                |"CompanyCode":"{ is_invoice-bukrs }",| &&
+                |"Division":"{ is_invoice-spart }",| &&
+                |"SalesOrganization":"{ is_invoice-vkorg }",| &&
+                |"BillToCustomer":"{ is_invoice-kunrg }",| &&
+                |"BillToName":"{ lv_kunrg_name }",| &&
+                |"SoldToCustomer":"{ is_invoice-kunag }",| &&
+                |"SoldToName":"{ lv_kunag_name }",| &&
+                |"Items":[| &&
+                  |\{ | &&
+                    |"ItemNumber":"{ is_invoice-posnr }",| &&
+                    |"Material":"{ is_invoice-matnr }",| &&
+                    |"Quantity":"{ lv_quantity }",| &&
+                    |"UnitOfMeasure":"{ is_invoice-vrkme }",| &&
+                    |"NetValue":"{ lv_value }",| &&
+                    |"Currency":"{ is_invoice-waerk }"| &&
+                  |\}| &&
+                |]| &&
+              |\}| &&
+            |\}|.
 
   ENDMETHOD.
 
   METHOD escape_json_string.
-    DATA: lv_output TYPE string.
+    " Escape special characters for JSON
+    rv_output = iv_input.
 
-    lv_output = iv_input.
-
-    " Escape special characters
-    REPLACE ALL OCCURRENCES OF '\' IN lv_output WITH '\\'.
-    REPLACE ALL OCCURRENCES OF '"' IN lv_output WITH '\"'.
+    " Escape backslash first (order matters!)
+    REPLACE ALL OCCURRENCES OF '\' IN rv_output WITH '\\'.
+    " Escape double quotes
+    REPLACE ALL OCCURRENCES OF '"' IN rv_output WITH '\"'.
+    " Escape newline
     REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>newline
-      IN lv_output WITH '\n'.
+      IN rv_output WITH '\n'.
+    " Escape carriage return + line feed
     REPLACE ALL OCCURRENCES OF cl_abap_char_utilities=>cr_lf
-      IN lv_output WITH '\n'.
-
-    rv_output = lv_output.
+      IN rv_output WITH '\n'.
 
   ENDMETHOD.
 
   METHOD format_date.
-    DATA: lv_year(4)  TYPE c,
-          lv_month(2) TYPE c,
-          lv_day(2)   TYPE c.
-
-    " Convert SAP date (YYYYMMDD) to JSON format (YYYY-MM-DD)
-    lv_year  = iv_date+0(4).
-    lv_month = iv_date+4(2).
-    lv_day   = iv_date+6(2).
-
-    CONCATENATE lv_year '-' lv_month '-' lv_day INTO rv_formatted.
+    " Convert SAP date (YYYYMMDD) to JSON/ISO format (YYYY-MM-DD)
+    IF iv_date IS NOT INITIAL.
+      rv_formatted = |{ iv_date+0(4) }-{ iv_date+4(2) }-{ iv_date+6(2) }|.
+    ENDIF.
 
   ENDMETHOD.
 
   METHOD format_decimal.
-    DATA: lv_string TYPE string.
-
-    lv_string = iv_value.
-    CONDENSE lv_string NO-GAPS.
-
-    rv_formatted = lv_string.
+    " Convert decimal value to string without thousand separators
+    rv_formatted = condense( |{ iv_value }| ).
 
   ENDMETHOD.
 
@@ -391,161 +504,135 @@ ENDCLASS.
 CLASS lcl_api_handler IMPLEMENTATION.
 
   METHOD call_api.
-    DATA: lo_http_client TYPE REF TO if_http_client,
-          lv_response    TYPE string,
-          lv_http_code   TYPE i.
+    DATA:
+      lv_response_raw  TYPE string,
+      lv_http_status   TYPE i,
+      lt_headers       TYPE tihttpnvp,
+      lt_resp_headers  TYPE tihttpnvp,
+      lv_guid          TYPE guid_32,
+      ls_response_data TYPE ty_api_response_structure.
 
-    " Create HTTP client
-    lo_http_client = create_http_client( ).
+    " Build request headers with authentication
+    lt_headers = build_request_headers( ).
 
-    " Set authentication
-    set_authentication( io_http_client = lo_http_client ).
+    " Use provided GUID or let FM generate one
+    lv_guid = iv_guid.
 
-    " Set content type
-    lo_http_client->request->set_header_field(
-      name  = 'Content-Type'
-      value = 'application/json' ).
+    TRY.
+        " Call standardized REST API function module
+        CALL FUNCTION 'Z_SAP_TO_REST_API'
+          EXPORTING
+            im_url             = gv_api_endpoint
+            im_http_method     = 'POST'
+            im_payload_json    = iv_json
+            im_payload_case    = abap_false
+            it_header          = lt_headers
+            im_guuid           = lv_guid
+            im_tcode           = sy-tcode
+            im_track           = 'INVOICE_PUSH'
+            im_interface       = lc_interface_type
+            im_service_name    = 'JWMS_INVOICE'
+          IMPORTING
+            ex_guid            = lv_guid
+            ex_response_status = lv_http_status
+            et_response_header = lt_resp_headers
+            ex_reponse_raw     = lv_response_raw
+          EXCEPTIONS
+            argument_not_found           = 1
+            plugin_not_active            = 2
+            internal_error               = 3
+            http_invalid_state           = 4
+            response_failed              = 5
+            http_communication_failure   = 6
+            http_processing_failed       = 7
+            http_invalid_timeout         = 8
+            number_range_not_generated   = 9
+            error_while_save_text        = 10
+            OTHERS                       = 11.
 
-    " Set request body
-    lo_http_client->request->set_cdata( iv_json ).
+        IF sy-subrc <> 0.
+          " Handle exceptions from function module
+          RAISE EXCEPTION TYPE zcx_api_error
+            EXPORTING
+              textid = zcx_api_error=>api_call_failed.
+        ENDIF.
 
-    " Set method to POST
-    lo_http_client->request->set_method( 'POST' ).
+        " Build response structure
+        rs_response-http_status = lv_http_status.
+        rs_response-body = lv_response_raw.
+        rs_response-ack_number = parse_ack_number( iv_response = lv_response_raw ).
+        rs_response-guid = lv_guid.
 
-    " Send request
-    CALL METHOD lo_http_client->send
-      EXCEPTIONS
-        http_communication_failure = 1
-        http_invalid_state         = 2
-        http_processing_failed     = 3
-        OTHERS                     = 4.
-
-    IF sy-subrc <> 0.
-      lo_http_client->close( ).
-      RAISE EXCEPTION TYPE zcx_api_error
-        EXPORTING
-          textid = zcx_api_error=>api_send_failed.
-    ENDIF.
-
-    " Receive response
-    CALL METHOD lo_http_client->receive
-      EXCEPTIONS
-        http_communication_failure = 1
-        http_invalid_state         = 2
-        http_processing_failed     = 3
-        OTHERS                     = 4.
-
-    IF sy-subrc <> 0.
-      lo_http_client->close( ).
-      RAISE EXCEPTION TYPE zcx_api_error
-        EXPORTING
-          textid = zcx_api_error=>api_receive_failed.
-    ENDIF.
-
-    " Get response
-    lv_response = lo_http_client->response->get_cdata( ).
-    lo_http_client->response->get_status(
-      IMPORTING
-        code = lv_http_code ).
-
-    " Parse response
-    rs_response-http_status = lv_http_code.
-    rs_response-body = lv_response.
-    rs_response-ack_number = parse_ack_number( iv_response = lv_response ).
-
-    " Close connection
-    lo_http_client->close( ).
-
-  ENDMETHOD.
-
-  METHOD create_http_client.
-    DATA: lv_url TYPE string.
-
-    lv_url = gv_api_endpoint.
-
-    CALL METHOD cl_http_client=>create_by_url
-      EXPORTING
-        url                = lv_url
-      IMPORTING
-        client             = ro_client
-      EXCEPTIONS
-        argument_not_found = 1
-        plugin_not_active  = 2
-        internal_error     = 3
-        OTHERS             = 4.
-
-    IF sy-subrc <> 0.
-      RAISE EXCEPTION TYPE zcx_api_error
-        EXPORTING
-          textid = zcx_api_error=>http_client_creation_failed.
-    ENDIF.
-
-    " Set timeout (30 seconds or from config)
-    IF gv_api_timeout IS INITIAL.
-      ro_client->propertytype_logon_popup = ro_client->co_disabled.
-      ro_client->timeout = 30.
-    ELSE.
-      ro_client->timeout = gv_api_timeout.
-    ENDIF.
+      CATCH cx_root INTO DATA(lx_error).
+        RAISE EXCEPTION TYPE zcx_api_error
+          EXPORTING
+            textid   = zcx_api_error=>api_call_failed
+            previous = lx_error.
+    ENDTRY.
 
   ENDMETHOD.
 
-  METHOD set_authentication.
-    DATA: lv_auth_string TYPE string,
-          lv_encoded     TYPE string.
+  METHOD build_request_headers.
+    DATA:
+      ls_header      TYPE ihttpnvp,
+      lv_auth_string TYPE string,
+      lv_credentials TYPE string,
+      lv_encoded     TYPE string.
 
+    " Build authentication headers based on configured auth type
     CASE gv_api_auth_type.
       WHEN 'OAUTH'.
         " OAuth Bearer token
-        CONCATENATE 'Bearer' gv_api_token INTO lv_auth_string
-          SEPARATED BY space.
-        io_http_client->request->set_header_field(
-          name  = 'Authorization'
-          value = lv_auth_string ).
+        ls_header-name = 'Authorization'.
+        ls_header-value = |Bearer { gv_api_token }|.
+        APPEND ls_header TO rt_headers.
 
       WHEN 'BASIC'.
         " Basic Authentication
-        CONCATENATE gv_api_username ':' gv_api_password INTO lv_auth_string.
+        lv_credentials = |{ gv_api_username }:{ gv_api_password }|.
 
-        " Base64 encode
-        CALL FUNCTION 'SCMS_BASE64_ENCODE_STR'
-          EXPORTING
-            input  = lv_auth_string
-          IMPORTING
-            output = lv_encoded.
+        " Base64 encode credentials
+        TRY.
+            CALL FUNCTION 'SCMS_BASE64_ENCODE_STR'
+              EXPORTING
+                input  = lv_credentials
+              IMPORTING
+                output = lv_encoded.
 
-        CONCATENATE 'Basic' lv_encoded INTO lv_auth_string
-          SEPARATED BY space.
-        io_http_client->request->set_header_field(
-          name  = 'Authorization'
-          value = lv_auth_string ).
+            ls_header-name = 'Authorization'.
+            ls_header-value = |Basic { lv_encoded }|.
+            APPEND ls_header TO rt_headers.
+
+          CATCH cx_root.
+            " Log encoding error but continue
+        ENDTRY.
 
       WHEN 'APIKEY'.
-        " API Key in header
-        io_http_client->request->set_header_field(
-          name  = 'X-API-Key'
-          value = gv_api_token ).
+        " API Key authentication
+        ls_header-name = 'X-API-Key'.
+        ls_header-value = gv_api_token.
+        APPEND ls_header TO rt_headers.
 
     ENDCASE.
+
+    " Add any additional custom headers if needed
+    " Content-Type is already handled by the FM
 
   ENDMETHOD.
 
   METHOD parse_ack_number.
-    DATA: lv_json   TYPE string,
-          lv_ack_no TYPE string.
+    DATA lv_ack_no TYPE string.
 
-    lv_json = iv_response.
-
-    " Simple JSON parsing (assuming response format: {"ackNumber": "12345"})
-    " For production, consider using /UI2/CL_JSON or similar JSON parser
-    FIND REGEX '"ackNumber"\s*:\s*"([^"]+)"' IN lv_json
+    " Parse acknowledgment number from JSON response
+    " Try primary field name
+    FIND REGEX '"ackNumber"\s*:\s*"([^"]+)"' IN iv_response
       SUBMATCHES lv_ack_no.
 
     IF sy-subrc = 0.
       rv_ack_number = lv_ack_no.
     ELSE.
       " Try alternative field name
-      FIND REGEX '"acknowledgementNumber"\s*:\s*"([^"]+)"' IN lv_json
+      FIND REGEX '"acknowledgementNumber"\s*:\s*"([^"]+)"' IN iv_response
         SUBMATCHES lv_ack_no.
       IF sy-subrc = 0.
         rv_ack_number = lv_ack_no.
@@ -575,40 +662,41 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD validate_company_code.
-    DATA: lv_bukrs TYPE t001-bukrs.
-
-    " Check if company code exists in T001
+    " Validate company code exists in T001
     SELECT SINGLE bukrs
       FROM t001
-      INTO lv_bukrs
-      WHERE bukrs = p_bukrs.
+      INTO @DATA(lv_bukrs)
+      WHERE bukrs = @p_bukrs.
 
     IF sy-subrc <> 0.
-      MESSAGE e003(lc_msgid) WITH p_bukrs.
+      RAISE EXCEPTION TYPE zcx_validation_error
+        MESSAGE e003(lc_msgid) WITH p_bukrs.
     ENDIF.
 
   ENDMETHOD.
 
   METHOD validate_date_range.
-    " Validate date range: From <= To
+    " Validate that From date is not after To date
     IF p_fkdat_f > p_fkdat_t.
-      MESSAGE e002(lc_msgid).
+      RAISE EXCEPTION TYPE zcx_validation_error
+        MESSAGE e002(lc_msgid).
     ENDIF.
 
   ENDMETHOD.
 
   METHOD read_configuration.
-    DATA: lt_config    TYPE tt_config,
-          lw_config    TYPE ty_config,
-          lw_api_config TYPE ty_api_config,
-          lv_fkart     TYPE fkart.
+    DATA:
+      lt_config     TYPE tt_config,
+      ls_config     TYPE ty_config,
+      ls_api_config TYPE ty_api_config,
+      lv_fkart      TYPE fkart.
 
-    " Read billing types from ZLOG_EXEC_VAR
-    SELECT name value value1 value2 active
+    " Read billing type configuration
+    SELECT name, value, value1, value2, active
       FROM zlog_exec_var
-      INTO TABLE lt_config
+      INTO TABLE @lt_config
       WHERE name = 'ZSCM_GET_INV_BILLINGTYPE'
-        AND active = abap_true.
+        AND active = @abap_true.
 
     IF sy-subrc <> 0 OR lt_config IS INITIAL.
       RAISE EXCEPTION TYPE zcx_config_missing
@@ -616,19 +704,18 @@ CLASS lcl_report IMPLEMENTATION.
           textid = zcx_config_missing=>billing_types_missing.
     ENDIF.
 
-    " Extract billing types
-    LOOP AT lt_config INTO lw_config.
-      lv_fkart = lw_config-value.
-      APPEND lv_fkart TO gt_billing_types.
+    " Extract billing types into internal table
+    LOOP AT lt_config INTO ls_config.
+      APPEND ls_config-value TO gt_billing_types.
     ENDLOOP.
 
-    " Read Account ID, Business ID, Sub-Business ID
+    " Read Account, Business, and Sub-Business IDs
     CLEAR lt_config.
-    SELECT name value value1 value2 active
+    SELECT name, value, value1, value2, active
       FROM zlog_exec_var
-      INTO TABLE lt_config
+      INTO TABLE @lt_config
       WHERE name IN ('ZSCM_ACCOUNTID', 'ZSCM_BUSINESSID', 'ZSCM_SUB_BUSINESSID')
-        AND active = abap_true.
+        AND active = @abap_true.
 
     IF sy-subrc <> 0.
       RAISE EXCEPTION TYPE zcx_config_missing
@@ -636,18 +723,19 @@ CLASS lcl_report IMPLEMENTATION.
           textid = zcx_config_missing=>ids_missing.
     ENDIF.
 
-    LOOP AT lt_config INTO lw_config.
-      CASE lw_config-name.
+    " Populate global ID variables
+    LOOP AT lt_config INTO ls_config.
+      CASE ls_config-name.
         WHEN 'ZSCM_ACCOUNTID'.
-          gv_account_id = lw_config-value.
+          gv_account_id = ls_config-value.
         WHEN 'ZSCM_BUSINESSID'.
-          gv_business_id = lw_config-value.
+          gv_business_id = ls_config-value.
         WHEN 'ZSCM_SUB_BUSINESSID'.
-          gv_sub_business_id = lw_config-value.
+          gv_sub_business_id = ls_config-value.
       ENDCASE.
     ENDLOOP.
 
-    " Validate all IDs are populated
+    " Validate all required IDs are populated
     IF gv_account_id IS INITIAL OR
        gv_business_id IS INITIAL OR
        gv_sub_business_id IS INITIAL.
@@ -656,13 +744,13 @@ CLASS lcl_report IMPLEMENTATION.
           textid = zcx_config_missing=>ids_missing.
     ENDIF.
 
-    " Read API configuration from ZWSO2APIDTL
-    SELECT SINGLE interface_name endpoint_url auth_type
-                  username password token timeout active
+    " Read API configuration
+    SELECT SINGLE interface_name, endpoint_url, auth_type,
+                  username, password, token, timeout, active
       FROM zwso2apidtl
-      INTO lw_api_config
-      WHERE interface_name = lc_interface_type
-        AND active = abap_true.
+      INTO @ls_api_config
+      WHERE interface_name = @lc_interface_type
+        AND active = @abap_true.
 
     IF sy-subrc <> 0.
       RAISE EXCEPTION TYPE zcx_config_missing
@@ -670,15 +758,15 @@ CLASS lcl_report IMPLEMENTATION.
           textid = zcx_config_missing=>api_config_missing.
     ENDIF.
 
-    " Populate global API variables
-    gv_api_endpoint   = lw_api_config-endpoint_url.
-    gv_api_auth_type  = lw_api_config-auth_type.
-    gv_api_username   = lw_api_config-username.
-    gv_api_password   = lw_api_config-password.
-    gv_api_token      = lw_api_config-token.
-    gv_api_timeout    = lw_api_config-timeout.
+    " Populate global API configuration variables
+    gv_api_endpoint  = ls_api_config-endpoint_url.
+    gv_api_auth_type = ls_api_config-auth_type.
+    gv_api_username  = ls_api_config-username.
+    gv_api_password  = ls_api_config-password.
+    gv_api_token     = ls_api_config-token.
+    gv_api_timeout   = ls_api_config-timeout.
 
-    " Validate API endpoint
+    " Validate critical API endpoint
     IF gv_api_endpoint IS INITIAL.
       RAISE EXCEPTION TYPE zcx_config_missing
         EXPORTING
@@ -686,111 +774,113 @@ CLASS lcl_report IMPLEMENTATION.
     ENDIF.
 
     " Log successful configuration read
-    lo_logger->log_info( 'Configuration read successfully' ).
+    mo_logger->log_info( 'Configuration read successfully' ).
 
   ENDMETHOD.
 
   METHOD select_billing_data.
-    DATA: lt_vbeln  TYPE STANDARD TABLE OF vbeln_vf,
-          lv_vbeln  TYPE vbeln_vf,
-          lv_message TYPE string,
-          lv_header_count TYPE string,
-          lv_item_count   TYPE string.
+    DATA:
+      lt_vbeln        TYPE STANDARD TABLE OF vbeln_vf,
+      lv_message      TYPE string,
+      lv_header_count TYPE string,
+      lv_item_count   TYPE string.
 
-    " Select billing headers
-    SELECT vbeln fkdat bukrs spart vkorg fkart kunrg kunag
+    " Select billing document headers with modern OpenSQL
+    SELECT vbeln, fkdat, bukrs, spart, vkorg, fkart, kunrg, kunag
       FROM vbrk
-      INTO CORRESPONDING FIELDS OF TABLE gt_billing_headers
-      WHERE fkart IN gt_billing_types
-        AND fkart IN s_fkart
-        AND fkdat BETWEEN p_fkdat_f AND p_fkdat_t
-        AND bukrs = p_bukrs
-        AND vkorg IN s_vkorg
-        AND fksto = space.
+      INTO CORRESPONDING FIELDS OF TABLE @gt_billing_headers
+      WHERE fkart IN @gt_billing_types
+        AND fkart IN @s_fkart
+        AND fkdat BETWEEN @p_fkdat_f AND @p_fkdat_t
+        AND bukrs = @p_bukrs
+        AND vkorg IN @s_vkorg
+        AND fksto = @space.
 
     IF sy-subrc <> 0 OR gt_billing_headers IS INITIAL.
-      lo_logger->log_info( 'No billing headers found' ).
+      mo_logger->log_info( 'No billing headers found for selection criteria' ).
       RETURN.
     ENDIF.
 
-    " Collect VBELN for items selection
-    LOOP AT gt_billing_headers INTO gw_billing_header.
-      lv_vbeln = gw_billing_header-vbeln.
-      APPEND lv_vbeln TO lt_vbeln.
-    ENDLOOP.
-
+    " Extract document numbers for item selection
+    lt_vbeln = VALUE #( FOR ls_header IN gt_billing_headers ( ls_header-vbeln ) ).
     SORT lt_vbeln.
     DELETE ADJACENT DUPLICATES FROM lt_vbeln.
 
-    " Select billing items using FOR ALL ENTRIES
+    " Select billing items using FOR ALL ENTRIES (without JOIN)
     IF lt_vbeln IS NOT INITIAL.
-      SELECT vbrp~vbeln vbrp~posnr vbrk~fkdat
-             vbrp~matnr vbrp~fkimg vbrp~vrkme
-             vbrp~netwr vbrp~waerk
+      " First, select billing items
+      SELECT vbeln, posnr, matnr, fkimg, vrkme, netwr, waerk
         FROM vbrp
-        INNER JOIN vbrk ON vbrp~vbeln = vbrk~vbeln
-        INTO CORRESPONDING FIELDS OF TABLE gt_billing_items
-        FOR ALL ENTRIES IN lt_vbeln
-        WHERE vbrp~vbeln = lt_vbeln-table_line.
+        INTO CORRESPONDING FIELDS OF TABLE @gt_billing_items
+        FOR ALL ENTRIES IN @lt_vbeln
+        WHERE vbeln = @lt_vbeln-table_line.
+
+      " Then, enrich with billing date from header
+      IF gt_billing_items IS NOT INITIAL.
+        LOOP AT gt_billing_items ASSIGNING FIELD-SYMBOL(<fs_item>).
+          READ TABLE gt_billing_headers INTO DATA(ls_header)
+            WITH KEY vbeln = <fs_item>-vbeln.
+          IF sy-subrc = 0.
+            <fs_item>-fkdat = ls_header-fkdat.
+          ENDIF.
+        ENDLOOP.
+      ENDIF.
     ENDIF.
 
     IF sy-subrc <> 0 OR gt_billing_items IS INITIAL.
-      lo_logger->log_warning( 'No billing items found' ).
+      mo_logger->log_warning( 'No billing items found' ).
       RETURN.
     ENDIF.
 
-    " Enrich customer data
+    " Enrich with customer master data
     enrich_customer_data( ).
 
-    " Log data selection summary
-    lv_header_count = lines( gt_billing_headers ).
-    lv_item_count = lines( gt_billing_items ).
-
-    CONCATENATE 'Selected' lv_header_count 'headers and'
-                lv_item_count 'items'
-      INTO lv_message SEPARATED BY space.
-
-    lo_logger->log_info( lv_message ).
+    " Log selection summary
+    lv_header_count = |{ lines( gt_billing_headers ) }|.
+    lv_item_count = |{ lines( gt_billing_items ) }|.
+    lv_message = |Selected { lv_header_count } headers and { lv_item_count } items|.
+    mo_logger->log_info( lv_message ).
 
   ENDMETHOD.
 
   METHOD enrich_customer_data.
-    DATA: lt_kunnr TYPE STANDARD TABLE OF kunnr.
+    DATA lt_kunnr TYPE STANDARD TABLE OF kunnr.
 
-    " Collect unique customer numbers
-    LOOP AT gt_billing_headers INTO gw_billing_header.
-      APPEND gw_billing_header-kunrg TO lt_kunnr.
-      APPEND gw_billing_header-kunag TO lt_kunnr.
-    ENDLOOP.
-
+    " Collect unique customer numbers using VALUE constructor
+    lt_kunnr = VALUE #( FOR ls_header IN gt_billing_headers
+                        ( ls_header-kunrg )
+                        ( ls_header-kunag ) ).
+    
     SORT lt_kunnr.
     DELETE ADJACENT DUPLICATES FROM lt_kunnr.
 
-    " Read customer names
+    " Read customer master data
     IF lt_kunnr IS NOT INITIAL.
-      SELECT kunnr name1
+      SELECT kunnr, name1
         FROM kna1
-        INTO TABLE gt_customers
-        FOR ALL ENTRIES IN lt_kunnr
-        WHERE kunnr = lt_kunnr-table_line.
+        INTO TABLE @gt_customers
+        FOR ALL ENTRIES IN @lt_kunnr
+        WHERE kunnr = @lt_kunnr-table_line.
 
       IF sy-subrc <> 0.
-        lo_logger->log_warning( 'No customer data found' ).
+        mo_logger->log_warning( 'Customer master data not found' ).
       ENDIF.
     ENDIF.
 
-    " Update headers with customer names
+    " Update headers with customer names using field symbols
     LOOP AT gt_billing_headers ASSIGNING FIELD-SYMBOL(<fs_header>).
-      READ TABLE gt_customers INTO gw_customer
+      " Bill-to customer name
+      READ TABLE gt_customers INTO DATA(ls_customer)
         WITH KEY kunnr = <fs_header>-kunrg.
       IF sy-subrc = 0.
-        <fs_header>-kunrg_name = gw_customer-name1.
+        <fs_header>-kunrg_name = ls_customer-name1.
       ENDIF.
 
-      READ TABLE gt_customers INTO gw_customer
+      " Sold-to customer name
+      READ TABLE gt_customers INTO ls_customer
         WITH KEY kunnr = <fs_header>-kunag.
       IF sy-subrc = 0.
-        <fs_header>-kunag_name = gw_customer-name1.
+        <fs_header>-kunag_name = ls_customer-name1.
       ENDIF.
     ENDLOOP.
 
@@ -805,17 +895,14 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD initialize_logger.
-    " Create logger instance
-    CREATE OBJECT lo_logger.
-    lo_logger->initialize( ).
+    " Create object instances
+    CREATE OBJECT mo_logger.
+    mo_logger->initialize( ).
 
-    " Create JSON builder instance
-    CREATE OBJECT lo_json_builder.
+    CREATE OBJECT mo_json_builder.
+    CREATE OBJECT mo_api_handler.
 
-    " Create API handler instance
-    CREATE OBJECT lo_api_handler.
-
-    " Initialize counters
+    " Initialize processing counters
     CLEAR: gv_processed_count,
            gv_success_count,
            gv_failed_count,
@@ -825,38 +912,33 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD finalize_logger.
-    " Save log in background mode
+    " Save or display log based on execution mode
     IF sy-batch = abap_true.
-      lo_logger->save_log( ).
+      mo_logger->save_log( ).
     ELSE.
       " Display log in foreground if errors occurred
       IF gv_failed_count > 0.
-        lo_logger->display_log( ).
+        mo_logger->display_log( ).
       ENDIF.
     ENDIF.
   ENDMETHOD.
 
   METHOD read_interface_records.
-    DATA: lt_vbeln TYPE STANDARD TABLE OF vbeln_vf,
-          lv_vbeln TYPE vbeln_vf.
+    DATA lt_vbeln TYPE STANDARD TABLE OF vbeln_vf.
 
-    " Build range table for VBELN
-    LOOP AT gt_billing_items INTO gw_billing_item.
-      lv_vbeln = gw_billing_item-vbeln.
-      APPEND lv_vbeln TO lt_vbeln.
-    ENDLOOP.
-
+    " Extract document numbers from billing items
+    lt_vbeln = VALUE #( FOR ls_item IN gt_billing_items ( ls_item-vbeln ) ).
     SORT lt_vbeln.
     DELETE ADJACENT DUPLICATES FROM lt_vbeln.
 
-    " Bulk read interface records
+    " Bulk read interface tracking records
     IF lt_vbeln IS NOT INITIAL.
       SELECT *
         FROM zscm_invoice_interface
-        INTO TABLE gt_interface_records
-        FOR ALL ENTRIES IN lt_vbeln
-        WHERE interface_type = lc_interface_type
-          AND vbeln = lt_vbeln-table_line.
+        INTO TABLE @gt_interface_records
+        FOR ALL ENTRIES IN @lt_vbeln
+        WHERE interface_type = @lc_interface_type
+          AND vbeln = @lt_vbeln-table_line.
     ENDIF.
 
     " Sort by key + counter descending for latest record lookup
@@ -865,20 +947,18 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD check_idempotency.
-    DATA: lw_interface TYPE zscm_invoice_interface.
-
-    " Read latest record for this invoice item
-    READ TABLE gt_interface_records INTO lw_interface
+    " Read latest interface record for this invoice item
+    READ TABLE gt_interface_records INTO DATA(ls_interface)
       WITH KEY vbeln = iv_vbeln
                fkdat = iv_fkdat
                posnr = iv_posnr
       BINARY SEARCH.
 
     IF sy-subrc = 0.
-      " Record exists - check status
-      CASE lw_interface-status.
+      " Record exists - determine action based on status
+      CASE ls_interface-status.
         WHEN lc_status_success.
-          " Successfully pushed - skip
+          " Successfully processed - skip
           rv_action = lc_action_skip.
 
         WHEN lc_status_skipped.
@@ -886,12 +966,12 @@ CLASS lcl_report IMPLEMENTATION.
           rv_action = lc_action_skip.
 
         WHEN lc_status_failed.
-          " Failed - check retry count
-          IF lw_interface-counter >= lc_max_retry.
-            " Max retry reached - skip
+          " Failed - check retry limit
+          IF ls_interface-counter >= lc_max_retry.
+            " Maximum retries reached - skip
             rv_action = lc_action_skip.
-            lo_logger->log_warning(
-              'Max retry count reached for invoice ' && iv_vbeln ).
+            mo_logger->log_warning(
+              |Max retry count reached for invoice { iv_vbeln }| ).
           ELSE.
             " Retry allowed
             rv_action = lc_action_retry.
@@ -908,7 +988,7 @@ CLASS lcl_report IMPLEMENTATION.
       ENDCASE.
 
     ELSE.
-      " No record exists - push new invoice
+      " No existing record - push new invoice
       rv_action = lc_action_push.
 
     ENDIF.
@@ -916,37 +996,40 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD build_json_payload.
-    rv_json = lo_json_builder->build_invoice_json( is_invoice = is_invoice ).
+    rv_json = mo_json_builder->build_invoice_json( is_invoice = is_invoice ).
   ENDMETHOD.
 
   METHOD call_jwms_api.
-    rs_response = lo_api_handler->call_api( iv_json = iv_json ).
+    " Call JWMS API using standardized REST API handler
+    rs_response = mo_api_handler->call_api(
+      iv_json = iv_json
+      iv_guid = CONV guid_32( sy-datum && sy-uzeit && sy-uname ) ).
   ENDMETHOD.
 
   METHOD persist_result.
-    DATA: lw_interface TYPE zscm_invoice_interface,
-          lv_counter   TYPE i,
-          lv_counter_str TYPE string.
+    DATA:
+      ls_interface   TYPE zscm_invoice_interface,
+      lv_counter     TYPE i,
+      lv_counter_str TYPE string.
 
     " Read existing record with highest counter
     SELECT SINGLE *
       FROM zscm_invoice_interface
-      INTO lw_interface
-      WHERE mandt = sy-mandt
-        AND interface_type = lc_interface_type
-        AND vbeln = is_invoice-vbeln
-        AND fkdat = is_invoice-fkdat
-        AND posnr = is_invoice-posnr
+      INTO @ls_interface
+      WHERE mandt = @sy-mandt
+        AND interface_type = @lc_interface_type
+        AND vbeln = @is_invoice-vbeln
+        AND fkdat = @is_invoice-fkdat
+        AND posnr = @is_invoice-posnr
       ORDER BY counter DESCENDING.
 
     IF sy-subrc = 0.
       " Record exists - UPDATE scenario (retry)
-      lv_counter = lw_interface-counter + 1.
+      lv_counter = ls_interface-counter + 1.
 
       " Check max retry limit
       IF lv_counter >= lc_max_retry.
-        " Max retry reached - log and return
-        lo_logger->log_message(
+        mo_logger->log_message(
           iv_msgty = 'E'
           iv_msgno = '050'
           iv_msgv1 = is_invoice-vbeln ).
@@ -955,82 +1038,78 @@ CLASS lcl_report IMPLEMENTATION.
 
       " Update existing record
       UPDATE zscm_invoice_interface
-        SET status       = iv_status
-            counter      = lv_counter
-            json_payload = iv_json
-            api_response = iv_response
-            ack_number   = iv_ack_no
-            http_status  = iv_http_status
-            aedat        = sy-datum
-            aezet        = sy-uzeit
-            aenam        = sy-uname
-        WHERE mandt = sy-mandt
-          AND interface_type = lc_interface_type
-          AND vbeln = is_invoice-vbeln
-          AND fkdat = is_invoice-fkdat
-          AND posnr = is_invoice-posnr
-          AND counter = lw_interface-counter.
+        SET status       = @iv_status
+            counter      = @lv_counter
+            json_payload = @iv_json
+            api_response = @iv_response
+            ack_number   = @iv_ack_no
+            http_status  = @iv_http_status
+            aedat        = @sy-datum
+            aezet        = @sy-uzeit
+            aenam        = @sy-uname
+        WHERE mandt = @sy-mandt
+          AND interface_type = @lc_interface_type
+          AND vbeln = @is_invoice-vbeln
+          AND fkdat = @is_invoice-fkdat
+          AND posnr = @is_invoice-posnr
+          AND counter = @ls_interface-counter.
 
       IF sy-subrc = 0.
-        " Log successful update
-        lv_counter_str = lv_counter.
-        lo_logger->log_message(
+        lv_counter_str = |{ lv_counter }|.
+        mo_logger->log_message(
           iv_msgty = 'S'
           iv_msgno = '060'
           iv_msgv1 = is_invoice-vbeln
           iv_msgv2 = lv_counter_str ).
       ELSE.
-        " Log update failure
-        lo_logger->log_error(
-          'Failed to update interface table for invoice ' && is_invoice-vbeln ).
+        mo_logger->log_error(
+          |Failed to update interface table for invoice { is_invoice-vbeln }| ).
       ENDIF.
 
     ELSE.
-      " No existing record - INSERT scenario (new invoice)
+      " No existing record - INSERT scenario
       lv_counter = 1.
 
-      " Build new record
-      CLEAR lw_interface.
-      lw_interface-mandt            = sy-mandt.
-      lw_interface-interface_type   = lc_interface_type.
-      lw_interface-vbeln            = is_invoice-vbeln.
-      lw_interface-fkdat            = is_invoice-fkdat.
-      lw_interface-posnr            = is_invoice-posnr.
-      lw_interface-counter          = lv_counter.
-      lw_interface-status           = iv_status.
-      lw_interface-division         = is_invoice-spart.
-      lw_interface-bukrs            = is_invoice-bukrs.
-      lw_interface-kunrg            = is_invoice-kunrg.
-      lw_interface-kunrg_name       = is_invoice-kunrg_name.
-      lw_interface-kunag            = is_invoice-kunag.
-      lw_interface-kunag_name       = is_invoice-kunag_name.
-      lw_interface-accountid        = gv_account_id.
-      lw_interface-businessid       = gv_business_id.
-      lw_interface-sub_businessid   = gv_sub_business_id.
-      lw_interface-json_payload     = iv_json.
-      lw_interface-api_response     = iv_response.
-      lw_interface-ack_number       = iv_ack_no.
-      lw_interface-http_status      = iv_http_status.
-      lw_interface-erdat            = sy-datum.
-      lw_interface-erzet            = sy-uzeit.
-      lw_interface-ernam            = sy-uname.
-      lw_interface-aedat            = sy-datum.
-      lw_interface-aezet            = sy-uzeit.
-      lw_interface-aenam            = sy-uname.
+      " Build new record using VALUE constructor
+      ls_interface = VALUE #(
+        mandt           = sy-mandt
+        interface_type  = lc_interface_type
+        vbeln           = is_invoice-vbeln
+        fkdat           = is_invoice-fkdat
+        posnr           = is_invoice-posnr
+        counter         = lv_counter
+        status          = iv_status
+        division        = is_invoice-spart
+        bukrs           = is_invoice-bukrs
+        kunrg           = is_invoice-kunrg
+        kunrg_name      = is_invoice-kunrg_name
+        kunag           = is_invoice-kunag
+        kunag_name      = is_invoice-kunag_name
+        accountid       = gv_account_id
+        businessid      = gv_business_id
+        sub_businessid  = gv_sub_business_id
+        json_payload    = iv_json
+        api_response    = iv_response
+        ack_number      = iv_ack_no
+        http_status     = iv_http_status
+        erdat           = sy-datum
+        erzet           = sy-uzeit
+        ernam           = sy-uname
+        aedat           = sy-datum
+        aezet           = sy-uzeit
+        aenam           = sy-uname ).
 
       " Insert new record
-      INSERT zscm_invoice_interface FROM lw_interface.
+      INSERT zscm_invoice_interface FROM @ls_interface.
 
       IF sy-subrc = 0.
-        " Log successful insert
-        lo_logger->log_message(
+        mo_logger->log_message(
           iv_msgty = 'S'
           iv_msgno = '061'
           iv_msgv1 = is_invoice-vbeln ).
       ELSE.
-        " Log insert failure
-        lo_logger->log_error(
-          'Failed to insert interface table for invoice ' && is_invoice-vbeln ).
+        mo_logger->log_error(
+          |Failed to insert interface table for invoice { is_invoice-vbeln }| ).
       ENDIF.
 
     ENDIF.
@@ -1038,18 +1117,14 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD commit_package.
-    DATA: lv_count_str TYPE string.
-
-    " Commit work
+    " Commit database changes
     COMMIT WORK AND WAIT.
 
     " Log package commit
-    lv_count_str = gv_package_count.
-
-    lo_logger->log_message(
+    mo_logger->log_message(
       iv_msgty = 'I'
       iv_msgno = '040'
-      iv_msgv1 = lv_count_str ).
+      iv_msgv1 = CONV #( gv_package_count ) ).
 
     " Reset package counter
     gv_package_count = 0.
@@ -1109,7 +1184,7 @@ CLASS lcl_report IMPLEMENTATION.
       ELSE.
         " Header not found - skip
         ADD 1 TO gv_skipped_count.
-        lo_logger->log_warning( 'Header not found for item ' && gw_billing_item-vbeln ).
+        mo_logger->log_warning( |Header not found for item { gw_billing_item-vbeln }| ).
         CONTINUE.
       ENDIF.
 
@@ -1117,7 +1192,7 @@ CLASS lcl_report IMPLEMENTATION.
       IF lw_invoice-kunrg_name IS INITIAL OR
          lw_invoice-kunag_name IS INITIAL.
         ADD 1 TO gv_skipped_count.
-        lo_logger->log_message(
+        mo_logger->log_message(
           iv_msgty = 'W'
           iv_msgno = '005'
           iv_msgv1 = lw_invoice-vbeln ).
@@ -1134,7 +1209,7 @@ CLASS lcl_report IMPLEMENTATION.
         WHEN lc_action_skip.
           " Already processed or excluded
           ADD 1 TO gv_skipped_count.
-          lo_logger->log_message(
+          mo_logger->log_message(
             iv_msgty = 'I'
             iv_msgno = '010'
             iv_msgv1 = lw_invoice-vbeln ).
@@ -1154,7 +1229,7 @@ CLASS lcl_report IMPLEMENTATION.
               iv_json     = lv_json ).
             ADD 1 TO gv_success_count.
 
-            lo_logger->log_message(
+            mo_logger->log_message(
               iv_msgty = 'I'
               iv_msgno = '020'
               iv_msgv1 = lw_invoice-vbeln ).
@@ -1179,7 +1254,7 @@ CLASS lcl_report IMPLEMENTATION.
                     iv_ack_no      = lw_response-ack_number
                     iv_http_status = lw_response-http_status ).
 
-                  lo_logger->log_message(
+                  mo_logger->log_message(
                     iv_msgty = 'S'
                     iv_msgno = '008'
                     iv_msgv1 = lw_invoice-vbeln ).
@@ -1197,7 +1272,7 @@ CLASS lcl_report IMPLEMENTATION.
                     iv_response    = lw_response-body
                     iv_http_status = lw_response-http_status ).
 
-                  lo_logger->log_message(
+                  mo_logger->log_message(
                     iv_msgty = 'E'
                     iv_msgno = '006'
                     iv_msgv1 = lw_invoice-vbeln ).
@@ -1216,7 +1291,7 @@ CLASS lcl_report IMPLEMENTATION.
                   iv_json     = lv_json
                   iv_response = lo_exception->get_text( ) ).
 
-                lo_logger->log_error( lo_exception->get_text( ) ).
+                mo_logger->log_error( lo_exception->get_text( ) ).
 
             ENDTRY.
 
@@ -1240,36 +1315,23 @@ CLASS lcl_report IMPLEMENTATION.
   ENDMETHOD.
 
   METHOD display_summary.
-    DATA: lv_message       TYPE string,
-          lv_processed_str TYPE string,
-          lv_success_str   TYPE string,
-          lv_failed_str    TYPE string,
-          lv_skipped_str   TYPE string.
+    DATA lv_message TYPE string.
 
-    " Convert counts to strings
-    lv_processed_str = gv_processed_count.
-    lv_success_str   = gv_success_count.
-    lv_failed_str    = gv_failed_count.
-    lv_skipped_str   = gv_skipped_count.
+    " Build summary message using string templates
+    lv_message = |Processing complete: | &&
+                 |Processed: { gv_processed_count } | &&
+                 |Success: { gv_success_count } | &&
+                 |Failed: { gv_failed_count } | &&
+                 |Skipped: { gv_skipped_count }|.
 
-    " Build summary message
-    CONCATENATE 'Processing complete:'
-                'Processed:' lv_processed_str
-                'Success:' lv_success_str
-                'Failed:' lv_failed_str
-                'Skipped:' lv_skipped_str
-      INTO lv_message SEPARATED BY space.
-
-    " Display summary
+    " Display summary based on execution mode
     IF sy-batch = abap_true.
-      " Background mode - log to application log
-      lo_logger->log_info( lv_message ).
+      mo_logger->log_info( lv_message ).
     ELSE.
-      " Foreground mode - display message
       MESSAGE lv_message TYPE 'S'.
     ENDIF.
 
-    " Determine run status
+    " Determine overall run status
     IF gv_failed_count = 0.
       gv_run_status = 'SUCCESS'.
     ELSEIF gv_success_count > 0 AND gv_failed_count > 0.
@@ -1282,4 +1344,4 @@ CLASS lcl_report IMPLEMENTATION.
 
 ENDCLASS.
 
-" END: Cursor Generated Code
+" END: Regenerated Code with Best Practices
